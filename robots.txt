@@ -1,0 +1,5 @@
+User-agent: *
+Allow: /
+
+Sitemap: https://forzasoft.in/sitemap.xml
+
