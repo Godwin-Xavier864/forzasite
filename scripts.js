@@ -179,8 +179,8 @@ class ForzaSoftWebsite {
         e.preventDefault();
         
         const form = e.target;
-        const submitBtn = form.querySelector('.btn-submit');
-        const formData = new FormData(form);
+        const submitBtn = document.getElementById('submitBtn') || form.querySelector('.btn-submit');
+        const result = document.getElementById('result');
         
         // Validate form
         if (!this.validateForm(form)) {
@@ -189,20 +189,71 @@ class ForzaSoftWebsite {
         
         // Show loading state
         this.setSubmitButtonLoading(submitBtn, true);
+        this.setFormResult(result, 'Submitting...', 'result');
         
         try {
-            // Simulate form submission (replace with actual endpoint)
-            await this.simulateFormSubmission(formData);
-            
-            // Show success message
-            this.showFormSuccess();
-            form.reset();
+            const response = await fetch('https://api.formdock.in/api/forms/submit/', {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify(this.buildFormdockPayload())
+            });
+
+            if (response.ok) {
+                this.setFormResult(result, 'Form submitted successfully', 'result success');
+                form.reset();
+                this.showFormSuccess();
+            } else {
+                this.setFormResult(result, 'Submission failed', 'result error');
+            }
         } catch (error) {
             console.error('Form submission error:', error);
-            this.showFormError('There was an error sending your message. Please try again.');
+            this.setFormResult(result, 'Something went wrong', 'result error');
         } finally {
             this.setSubmitButtonLoading(submitBtn, false);
         }
+    }
+
+    buildFormdockPayload() {
+        const getValue = (id) => {
+            const element = document.getElementById(id);
+            return element ? element.value.trim() : '';
+        };
+
+        const newsletter = document.getElementById('newsletter');
+        const privacy = document.getElementById('privacy');
+
+        return {
+            project_api_key: '38686aad14346ff7c2e7924a0b808b64d15a373a8087f2c2',
+            fields: {
+                first_name: getValue('firstName'),
+                last_name: getValue('lastName'),
+                email: getValue('email'),
+                phone: getValue('phone'),
+                organization: getValue('company'),
+                place: '',
+                service_type: getValue('serviceType'),
+                budget: getValue('budget'),
+                timeline: getValue('timeline'),
+                message: getValue('message'),
+                newsletter: newsletter ? newsletter.checked : false,
+                privacy_policy: privacy ? privacy.checked : false
+            },
+            metadata: {
+                page_url: window.location.href,
+                referrer: document.referrer || '',
+                user_agent: navigator.userAgent,
+                timestamp: new Date().toISOString()
+            }
+        };
+    }
+
+    setFormResult(result, text, className) {
+        if (!result) {
+            return;
+        }
+
+        result.textContent = text;
+        result.className = className;
     }
 
     validateForm(form) {
@@ -228,7 +279,10 @@ class ForzaSoftWebsite {
         this.clearFieldError(field);
         
         // Required field validation
-        if (field.hasAttribute('required') && !value) {
+        if (field.type === 'checkbox' && field.hasAttribute('required') && !field.checked) {
+            errorMessage = 'This field is required.';
+            isValid = false;
+        } else if (field.hasAttribute('required') && !value) {
             errorMessage = 'This field is required.';
             isValid = false;
         }
@@ -294,15 +348,13 @@ class ForzaSoftWebsite {
         const form = document.getElementById('contact-form');
         
         if (successElement && form) {
-            form.style.display = 'none';
             successElement.classList.add('show');
             
             // Scroll to success message
             successElement.scrollIntoView({ behavior: 'smooth' });
             
-            // Reset form visibility after 10 seconds
+            // Hide success message after 10 seconds
             setTimeout(() => {
-                form.style.display = 'flex';
                 successElement.classList.remove('show');
             }, 10000);
         }
@@ -311,22 +363,6 @@ class ForzaSoftWebsite {
     showFormError(message) {
         // Create and show error notification
         this.showNotification(message, 'error');
-    }
-
-    simulateFormSubmission(formData) {
-        return new Promise((resolve, reject) => {
-            // Simulate network delay
-            setTimeout(() => {
-                // Simulate random success/failure for demo
-                const success = Math.random() > 0.1; // 90% success rate
-                
-                if (success) {
-                    resolve({ success: true, message: 'Form submitted successfully' });
-                } else {
-                    reject(new Error('Submission failed'));
-                }
-            }, 2000);
-        });
     }
 
     // FAQ functionality
