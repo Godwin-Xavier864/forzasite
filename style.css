@@ -999,6 +999,15 @@ a:hover {
     line-height: 1.6;
 }
 
+.formdock-card {
+    max-width: 400px;
+    margin: 0 auto;
+}
+
+.formdock-card .project-image {
+    height: 400px;
+}
+
 /* CTA Section */
 .cta {
     background:
